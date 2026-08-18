@@ -100,8 +100,14 @@
   .note-item{
     background:#f7f7fb; border-radius:9px; padding:8px 10px;
   }
-  .note-head{display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:3px;}
+  .note-head{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; color:var(--text-muted); margin-bottom:3px;}
   .note-head b{color:var(--text);}
+  .note-head-right{display:flex; align-items:center; gap:8px;}
+  .note-delete{
+    background:none; border:none; color:var(--text-muted); cursor:pointer;
+    font-size:11px; padding:0; line-height:1;
+  }
+  .note-delete:hover{color:var(--danger);}
   .note-body{font-size:13px; line-height:1.4; white-space:pre-wrap;}
   .notes-empty{font-size:12.5px; color:var(--text-muted); padding:4px 0;}
   .note-input-row{display:flex; gap:8px; align-items:flex-start;}
@@ -173,9 +179,14 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .card-meta{display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:4px;}
+  .card-last-comment{
+    font-size:10.5px; color:var(--text-muted); margin:4px 0 0; line-height:1.3;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .pill{
     font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:20px; white-space:nowrap;
   }
+  .pill-lg{font-size:11px; padding:2px 9px;}
   .pill-alta{background:#fde2e2; color:#b91c1c;}
   .pill-media{background:#fef3c7; color:#92400e;}
   .pill-baja{background:#dcfce7; color:#166534;}
@@ -421,6 +432,7 @@ const state = {
   pendientes: [],
   comments: [],
   notes: [],
+  latestComments: {}, // pendiente_id -> texto del comentario más reciente
   currentUser: localStorage.getItem('pl_user') || null,
   filterAssignee: 'all',
   filterProject: 'all',
@@ -494,7 +506,7 @@ async function startApp(){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('current-user-label').textContent = state.currentUser;
   populateFilters();
-  await Promise.all([loadPendientes(), loadNotes()]);
+  await Promise.all([loadPendientes(), loadNotes(), loadLatestComments()]);
   render();
   renderNotes();
   checkNewAssignments();
@@ -572,6 +584,20 @@ async function loadComments(pendienteId){
   return data || [];
 }
 
+// Para mostrar en cada tarjeta el último comentario, sin tener que abrir cada tarea.
+async function loadLatestComments(){
+  const { data, error } = await supabase
+    .from('comentarios')
+    .select('pendiente_id, content, created_at')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  const map = {};
+  for (const c of (data || [])) {
+    if (!map[c.pendiente_id]) map[c.pendiente_id] = c.content; // el primero visto ya es el más reciente
+  }
+  state.latestComments = map;
+}
+
 function subscribeRealtime(){
   supabase.channel('pendientes-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'pendientes' }, async () => {
@@ -580,6 +606,8 @@ function subscribeRealtime(){
       checkNewAssignments();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comentarios' }, async () => {
+      await loadLatestComments();
+      render();
       if (state.activeId) {
         state.comments = await loadComments(state.activeId);
         renderComments();
@@ -632,6 +660,7 @@ function renderCard(p){
     assigneeName ? `<div class="avatar" style="background:${colorFor(assigneeName)}" title="Responsable: ${esc(assigneeName)}">${initials(assigneeName)}</div>` : '',
     supportName ? `<div class="avatar" style="background:${colorFor(supportName)}" title="Apoyo: ${esc(supportName)}">${initials(supportName)}</div>` : '',
   ].filter(Boolean).join('');
+  const lastComment = state.latestComments[p.id];
   return `
     <div class="card${cardCls}" draggable="true" data-id="${p.id}" title="${esc(p.title)}">
       <div class="card-top">
@@ -643,6 +672,7 @@ function renderCard(p){
         ${p.project ? `<span class="pill pill-project">${esc(p.project)}</span>` : ''}
         ${dueBadge(p, urgency)}
       </div>
+      ${lastComment ? `<p class="card-last-comment" title="${esc(lastComment)}">💬 ${esc(lastComment)}</p>` : ''}
     </div>`;
 }
 
@@ -703,11 +733,23 @@ function renderNotes(){
   list.innerHTML = state.notes.length
     ? state.notes.map(n => `
         <div class="note-item">
-          <div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString('es-MX')}</span></div>
+          <div class="note-head">
+            <b>${esc(n.author)}</b>
+            <span class="note-head-right">
+              ${new Date(n.created_at).toLocaleString('es-MX')}
+              <button class="note-delete" data-id="${n.id}" title="Eliminar nota">✕</button>
+            </span>
+          </div>
           <div class="note-body">${esc(n.content)}</div>
         </div>`).join('')
     : `<p class="notes-empty">Sin notas todavía. Agrega la primera abajo.</p>`;
 }
+
+document.getElementById('notes-list').addEventListener('click', e => {
+  const btn = e.target.closest('.note-delete');
+  if (!btn) return;
+  deleteNote(btn.dataset.id);
+});
 
 document.getElementById('note-submit').addEventListener('click', submitNote);
 document.getElementById('note-input').addEventListener('keydown', e => {
@@ -724,15 +766,35 @@ async function submitNote(){
   renderNotes();
 }
 
+async function deleteNote(id){
+  if (!confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.')) return;
+  await supabase.from('notas').delete().eq('id', id);
+  await loadNotes();
+  renderNotes();
+}
+
 function renderSummary(filtered){
   const today = todayStr();
   const overdue = filtered.filter(p => p.due_date && p.due_date < today && p.status !== 'done').length;
   const total = filtered.length;
   const done = filtered.filter(p => p.status === 'done').length;
+
+  // Conteo por prioridad, solo de lo que sigue activo (no "Hecho"), para dar foco a lo que falta.
+  const active = filtered.filter(p => p.status !== 'done');
+  const alta = active.filter(p => p.priority === 'alta').length;
+  const media = active.filter(p => p.priority === 'media').length;
+  const baja = active.filter(p => p.priority === 'baja').length;
+
   document.getElementById('summary-bar').innerHTML = `
     <span><b>${total}</b> pendientes visibles</span>
     <span><b>${done}</b> completados</span>
     ${overdue ? `<span class="overdue">⚠ ${overdue} vencido${overdue === 1 ? '' : 's'}</span>` : ''}
+    <span style="display:flex; align-items:center; gap:6px;">
+      Prioridad activa:
+      <span class="pill pill-alta pill-lg">Alta ${alta}</span>
+      <span class="pill pill-media pill-lg">Media ${media}</span>
+      <span class="pill pill-baja pill-lg">Baja ${baja}</span>
+    </span>
   `;
 }
 
