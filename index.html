@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pendientes Luijo</title>
+<title>Pendientes RE&amp;SD Mexico</title>
 <style>
   :root{
     --bg:#f4f5f9;
@@ -137,15 +137,21 @@
   .pill-baja{background:#dcfce7; color:#166534;}
   .pill-project{background:#e0e7ff; color:#3730a3;}
   .pill-due{background:#f1f2f6; color:#4b5563;}
-  .pill-due.overdue{background:#fde2e2; color:#b91c1c;}
-  .pill-due.soon{background:#fef3c7; color:#92400e;}
+  .pill-due.overdue{background:#fecaca; color:#991b1b;}
+  .pill-due.soon{background:#fee2e2; color:#b91c1c;}
   .card-footer{
     display:flex; align-items:center; justify-content:space-between; margin-top:10px;
   }
+  .avatar-group{display:flex; align-items:center;}
+  .avatar-group .avatar{margin-left:-8px; border:2px solid var(--surface);}
+  .avatar-group .avatar:first-child{margin-left:0;}
   .avatar{
     width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:10.5px; font-weight:700; color:#fff; flex-shrink:0;
   }
+  /* Sombreado de urgencia por fecha límite */
+  .card.card-due-soon{background:#fff1f1; border-left:4px solid #f87171;}
+  .card.card-overdue{background:#fee2e2; border-left:4px solid #dc2626;}
   .comment-count{font-size:11.5px; color:var(--text-muted); display:flex; align-items:center; gap:4px;}
   .empty-col{color:var(--text-muted); font-size:12.5px; text-align:center; padding:20px 8px;}
 
@@ -189,7 +195,7 @@
 <!-- ============ 1. Código de acceso compartido ============ -->
 <div id="gate" class="gate-overlay">
   <div class="gate-box">
-    <h1>Pendientes Luijo</h1>
+    <h1>Pendientes RE&amp;SD Mexico</h1>
     <p>Ingresa el código de acceso del equipo para continuar</p>
     <input id="gate-input" type="password" placeholder="Código de acceso" autocomplete="off" />
     <p id="gate-error" class="error hidden">Código incorrecto, intenta de nuevo.</p>
@@ -216,7 +222,7 @@
 <div id="app" class="hidden">
   <header>
     <div>
-      <h1>Pendientes Luijo</h1>
+      <h1>Pendientes RE&amp;SD Mexico</h1>
       <div class="subtitle">Tablero del equipo</div>
     </div>
     <div class="header-right">
@@ -275,6 +281,10 @@
           <option value="done">Hecho</option>
         </select>
       </div>
+    </div>
+    <div class="field">
+      <label>Apoyo (opcional)</label>
+      <select id="f-support"></select>
     </div>
     <div class="field-row">
       <div class="field">
@@ -455,6 +465,10 @@ function populateFilters(){
   const assigneeFormSelect = document.getElementById('f-assignee');
   assigneeFormSelect.innerHTML = '<option value="">Sin asignar</option>' +
     state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+
+  const supportFormSelect = document.getElementById('f-support');
+  supportFormSelect.innerHTML = '<option value="">Nadie apoyando</option>' +
+    state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
 }
 
 function populateProjectFilter(){
@@ -478,7 +492,7 @@ async function loadTeam(){
 async function loadPendientes(){
   const { data, error } = await supabase
     .from('pendientes')
-    .select('*, assignee:team_members(id,name)')
+    .select('*, assignee:team_members!pendientes_assignee_id_fkey(id,name), support:team_members!pendientes_support_id_fkey(id,name)')
     .order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   state.pendientes = data || [];
@@ -514,7 +528,7 @@ function subscribeRealtime(){
 // Render: board
 // ---------------------------------------------------------------------
 function matchesFilters(p){
-  if (state.filterAssignee !== 'all' && p.assignee_id !== state.filterAssignee) return false;
+  if (state.filterAssignee !== 'all' && p.assignee_id !== state.filterAssignee && p.support_id !== state.filterAssignee) return false;
   if (state.filterProject !== 'all' && p.project !== state.filterProject) return false;
   if (state.search) {
     const hay = `${p.title} ${p.description || ''} ${p.project || ''}`.toLowerCase();
@@ -523,30 +537,43 @@ function matchesFilters(p){
   return true;
 }
 
-function dueBadge(p){
-  if (!p.due_date) return '';
+// Días de anticipación para marcar una tarea como "por vencer" (sombreado rojo claro)
+const DUE_SOON_DAYS = 10;
+
+function dueUrgency(p){
+  if (!p.due_date || p.status === 'done') return 'normal';
   const today = todayStr();
-  const overdue = p.due_date < today && p.status !== 'done';
-  const soonDate = new Date(); soonDate.setDate(soonDate.getDate() + 3);
-  const soon = !overdue && p.status !== 'done' && p.due_date <= soonDate.toISOString().slice(0,10);
-  const cls = overdue ? 'overdue' : (soon ? 'soon' : '');
+  if (p.due_date < today) return 'overdue';
+  const soonDate = new Date(); soonDate.setDate(soonDate.getDate() + DUE_SOON_DAYS);
+  if (p.due_date <= soonDate.toISOString().slice(0,10)) return 'soon';
+  return 'normal';
+}
+
+function dueBadge(p, urgency){
+  if (!p.due_date) return '';
+  const cls = urgency === 'overdue' ? 'overdue' : (urgency === 'soon' ? 'soon' : '');
   return `<span class="pill pill-due ${cls}">📅 ${fmtDate(p.due_date)}</span>`;
 }
 
 function renderCard(p){
   const assigneeName = p.assignee?.name || '';
+  const supportName = p.support?.name || '';
+  const urgency = dueUrgency(p);
+  const cardCls = urgency === 'overdue' ? ' card-overdue' : (urgency === 'soon' ? ' card-due-soon' : '');
+  const avatars = [
+    assigneeName ? `<div class="avatar" style="background:${colorFor(assigneeName)}" title="Responsable: ${esc(assigneeName)}">${initials(assigneeName)}</div>` : '',
+    supportName ? `<div class="avatar" style="background:${colorFor(supportName)}" title="Apoyo: ${esc(supportName)}">${initials(supportName)}</div>` : '',
+  ].filter(Boolean).join('');
   return `
-    <div class="card" draggable="true" data-id="${p.id}">
+    <div class="card${cardCls}" draggable="true" data-id="${p.id}">
       <p class="card-title">${esc(p.title)}</p>
       <div class="card-meta">
         <span class="pill pill-${p.priority}">${p.priority === 'alta' ? 'Alta' : p.priority === 'media' ? 'Media' : 'Baja'}</span>
         ${p.project ? `<span class="pill pill-project">${esc(p.project)}</span>` : ''}
-        ${dueBadge(p)}
+        ${dueBadge(p, urgency)}
       </div>
       <div class="card-footer">
-        ${assigneeName
-          ? `<div class="avatar" style="background:${colorFor(assigneeName)}" title="${esc(assigneeName)}">${initials(assigneeName)}</div>`
-          : `<span style="font-size:11px;color:var(--text-muted)">Sin asignar</span>`}
+        ${avatars ? `<div class="avatar-group">${avatars}</div>` : `<span style="font-size:11px;color:var(--text-muted)">Sin asignar</span>`}
       </div>
     </div>`;
 }
@@ -626,6 +653,7 @@ async function openModal(id){
     document.getElementById('f-title').value = '';
     document.getElementById('f-description').value = '';
     document.getElementById('f-assignee').value = state.team.find(t => t.name === state.currentUser)?.id || '';
+    document.getElementById('f-support').value = '';
     document.getElementById('f-status').value = 'todo';
     document.getElementById('f-priority').value = 'media';
     document.getElementById('f-due').value = '';
@@ -636,6 +664,7 @@ async function openModal(id){
     document.getElementById('f-title').value = p.title || '';
     document.getElementById('f-description').value = p.description || '';
     document.getElementById('f-assignee').value = p.assignee_id || '';
+    document.getElementById('f-support').value = p.support_id || '';
     document.getElementById('f-status').value = p.status;
     document.getElementById('f-priority').value = p.priority;
     document.getElementById('f-due').value = p.due_date || '';
@@ -662,6 +691,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     title,
     description: document.getElementById('f-description').value.trim(),
     assignee_id: document.getElementById('f-assignee').value || null,
+    support_id: document.getElementById('f-support').value || null,
     status: document.getElementById('f-status').value,
     priority: document.getElementById('f-priority').value,
     due_date: document.getElementById('f-due').value || null,
