@@ -239,6 +239,22 @@
   }
   .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:20px;}
   .no-scroll{overflow:hidden;}
+
+  /* ---------- Gestionar equipo ---------- */
+  .team-modal{max-width:440px;}
+  .team-list{display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; margin-bottom:16px;}
+  .team-row{
+    display:flex; align-items:center; gap:10px; padding:7px 10px;
+    background:#f7f7fb; border-radius:9px;
+  }
+  .team-row .avatar{width:26px; height:26px; font-size:10.5px;}
+  .team-row .team-name{flex:1; font-size:13.5px; font-weight:600;}
+  .team-row button{
+    background:none; border:1px solid var(--danger-soft); color:var(--danger);
+    border-radius:7px; padding:4px 10px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .team-row button:hover{background:var(--danger-soft);}
+  .team-empty{font-size:12.5px; color:var(--text-muted); padding:4px 0;}
 </style>
 </head>
 <body>
@@ -279,6 +295,7 @@
     <div class="header-right">
       <span id="current-user-label"></span>
       <button id="change-user-btn" class="link-btn">cambiar</button>
+      <button id="team-manage-btn" class="link-btn">⚙ Equipo</button>
     </div>
   </header>
 
@@ -380,6 +397,24 @@
       <button id="delete-btn" class="danger-btn hidden">Eliminar</button>
       <button id="close-modal-btn" class="link-btn">Cancelar</button>
       <button id="save-btn" class="primary-btn">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 5. Gestionar equipo ============ -->
+<div id="team-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal team-modal">
+    <h2>Gestionar equipo</h2>
+    <div class="team-list" id="team-list"></div>
+    <div class="field-row" style="align-items:flex-end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Agregar persona</label>
+        <input id="team-new-name" type="text" placeholder="Nombre completo" />
+      </div>
+      <button id="team-add-btn" class="primary-btn" style="margin-left:0;">Agregar</button>
+    </div>
+    <div class="modal-actions">
+      <button id="team-close-btn" class="link-btn">Cerrar</button>
     </div>
   </div>
 </div>
@@ -514,11 +549,12 @@ async function startApp(){
 }
 
 function populateFilters(){
-  const fa = document.getElementById('filter-assignee');
-  fa.innerHTML = '<option value="all">Todo el equipo</option>' +
-    state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
-  fa.addEventListener('change', () => { state.filterAssignee = fa.value; render(); });
+  refreshTeamSelects();
 
+  document.getElementById('filter-assignee').addEventListener('change', (e) => {
+    state.filterAssignee = e.target.value;
+    render();
+  });
   document.getElementById('search-input').addEventListener('input', (e) => {
     state.search = e.target.value.trim().toLowerCase();
     render();
@@ -527,14 +563,118 @@ function populateFilters(){
     state.filterProject = e.target.value;
     render();
   });
+}
+
+// Repuebla los <select> que dependen del equipo, sin re-enganchar listeners
+// (se puede llamar varias veces, por ejemplo tras agregar/quitar a alguien).
+function refreshTeamSelects(){
+  const fa = document.getElementById('filter-assignee');
+  const prevFa = fa.value;
+  fa.innerHTML = '<option value="all">Todo el equipo</option>' +
+    state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  fa.value = state.team.some(t => t.id === prevFa) ? prevFa : 'all';
+  state.filterAssignee = fa.value;
 
   const assigneeFormSelect = document.getElementById('f-assignee');
+  const prevAssignee = assigneeFormSelect.value;
   assigneeFormSelect.innerHTML = '<option value="">Sin asignar</option>' +
     state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  if (state.team.some(t => t.id === prevAssignee)) assigneeFormSelect.value = prevAssignee;
 
   const supportFormSelect = document.getElementById('f-support');
+  const prevSupport = supportFormSelect.value;
   supportFormSelect.innerHTML = '<option value="">Nadie apoyando</option>' +
     state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  if (state.team.some(t => t.id === prevSupport)) supportFormSelect.value = prevSupport;
+}
+
+// ---------------------------------------------------------------------
+// Gestionar equipo (agregar / quitar personas)
+// ---------------------------------------------------------------------
+let teamModalAll = []; // incluye personas inactivas, solo para esta pantalla
+
+async function openTeamModal(){
+  const { data, error } = await supabase.from('team_members').select('*').order('name');
+  if (!error) teamModalAll = data || [];
+  renderTeamList();
+  document.getElementById('team-modal-backdrop').classList.remove('hidden');
+  document.body.classList.add('no-scroll');
+}
+
+function closeTeamModal(){
+  document.getElementById('team-modal-backdrop').classList.add('hidden');
+  document.body.classList.remove('no-scroll');
+}
+
+function renderTeamList(){
+  const list = document.getElementById('team-list');
+  const activeMembers = teamModalAll.filter(t => t.active);
+  list.innerHTML = activeMembers.length
+    ? activeMembers.map(t => `
+        <div class="team-row">
+          <div class="avatar" style="background:${colorFor(t.name)}">${initials(t.name)}</div>
+          <span class="team-name">${esc(t.name)}</span>
+          <button class="team-remove" data-id="${t.id}">Quitar</button>
+        </div>`).join('')
+    : `<p class="team-empty">No hay nadie en el equipo todavía.</p>`;
+}
+
+document.getElementById('team-manage-btn').addEventListener('click', openTeamModal);
+document.getElementById('team-close-btn').addEventListener('click', closeTeamModal);
+document.getElementById('team-modal-backdrop').addEventListener('click', e => {
+  if (e.target.id === 'team-modal-backdrop') closeTeamModal();
+});
+document.getElementById('team-list').addEventListener('click', e => {
+  const btn = e.target.closest('.team-remove');
+  if (!btn) return;
+  removeTeamMember(btn.dataset.id);
+});
+document.getElementById('team-add-btn').addEventListener('click', addTeamMember);
+document.getElementById('team-new-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTeamMember();
+});
+
+async function addTeamMember(){
+  const input = document.getElementById('team-new-name');
+  const name = input.value.trim();
+  if (!name) return;
+  const existing = teamModalAll.find(t => t.name.toLowerCase() === name.toLowerCase());
+  if (existing && existing.active) {
+    alert(`${existing.name} ya está en el equipo.`);
+    return;
+  }
+  if (existing) {
+    // Ya existía pero estaba inactivo (se había quitado antes): lo reactivamos
+    // en vez de crear un registro duplicado.
+    await supabase.from('team_members').update({ active: true }).eq('id', existing.id);
+  } else {
+    await supabase.from('team_members').insert({ name });
+  }
+  input.value = '';
+  await refreshTeamEverywhere();
+}
+
+async function removeTeamMember(id){
+  const member = teamModalAll.find(t => t.id === id);
+  if (!member) return;
+  const activeTasks = state.pendientes.filter(p =>
+    (p.assignee_id === id || p.support_id === id) && p.status !== 'done'
+  ).length;
+  const warning = activeTasks
+    ? `${member.name} tiene ${activeTasks} pendiente${activeTasks === 1 ? '' : 's'} activo${activeTasks === 1 ? '' : 's'} asignado${activeTasks === 1 ? '' : 's'}. Sus tareas existentes se conservan, pero ya no podrás asignarle nuevas. ¿Quitar de todas formas?`
+    : `¿Quitar a ${member.name} del equipo? Sus pendientes anteriores se conservan, pero ya no podrás asignarle nuevos.`;
+  if (!confirm(warning)) return;
+  await supabase.from('team_members').update({ active: false }).eq('id', id);
+  await refreshTeamEverywhere();
+}
+
+async function refreshTeamEverywhere(){
+  await loadTeam();
+  const { data } = await supabase.from('team_members').select('*').order('name');
+  teamModalAll = data || [];
+  renderTeamList();
+  refreshTeamSelects();
+  render();
 }
 
 function populateProjectFilter(){
