@@ -141,17 +141,26 @@
   .danger-btn:hover{background:#fbd5d5;}
 
   .summary-bar{
-    display:flex; gap:18px; flex-wrap:wrap; padding:12px 28px; font-size:13px; color:var(--text-muted);
+    display:flex; gap:18px; flex-wrap:wrap; align-items:center; padding:12px 28px; font-size:13px; color:var(--text-muted);
   }
   .summary-bar b{color:var(--text);}
   .summary-bar .overdue{color:var(--danger); font-weight:600;}
+  .priority-summary{display:flex; align-items:center; gap:6px;}
+  .pill-clickable{cursor:pointer; border:none;}
+  .pill-clickable.active{box-shadow:0 0 0 2px currentColor;}
 
+  .board-area{
+    display:flex; gap:16px; align-items:flex-start;
+    padding:8px 28px 40px;
+  }
   .board{
     display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
-    padding:8px 28px 40px; align-items:start;
+    flex:1; min-width:0;
   }
   @media (max-width:900px){
+    .board-area{flex-direction:column;}
     .board{grid-template-columns:1fr; }
+    .oneonone-panel{width:100%;}
   }
   .column{
     background:#eceefa; border-radius:var(--radius); padding:12px; min-height:120px;
@@ -255,6 +264,46 @@
   }
   .team-row button:hover{background:var(--danger-soft);}
   .team-empty{font-size:12.5px; color:var(--text-muted); padding:4px 0;}
+
+  /* ---------- Panel privado de 1:1 ---------- */
+  .oneonone-panel{
+    width:300px; flex-shrink:0; background:var(--surface); border-radius:var(--radius);
+    padding:16px; box-shadow:var(--shadow); position:sticky; top:16px;
+  }
+  .oneonone-panel h3{margin:0 0 4px; font-size:14px; display:flex; align-items:center; gap:6px;}
+  .oneonone-sub{font-size:12px; color:var(--text-muted); margin:0 0 12px; display:flex; justify-content:space-between; align-items:center; gap:6px;}
+  .oneonone-lock{text-align:center; padding:16px 4px;}
+  .oneonone-lock input{
+    width:100%; text-align:center; letter-spacing:6px; font-size:17px; padding:9px;
+    border:1px solid var(--border); border-radius:9px; margin-bottom:10px;
+  }
+  .oneonone-lock button{
+    width:100%; padding:9px; border:none; border-radius:9px; background:var(--accent);
+    color:#fff; font-weight:600; cursor:pointer;
+  }
+  .oneonone-lock .error{margin-top:8px; margin-bottom:0;}
+  .oneonone-toggle{display:block; margin:0 0 10px; font-size:12px; background:none; border:none; padding:0; cursor:pointer; color:var(--accent); text-align:left;}
+  .oneonone-toggle:hover{text-decoration:underline;}
+  .oneonone-notes-list{
+    display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; margin-bottom:10px;
+  }
+  .oneonone-note{background:#f7f7fb; border-radius:9px; padding:8px 10px;}
+  .oneonone-note .date{font-size:11px; color:var(--text-muted); margin-bottom:3px;}
+  .oneonone-note .body{font-size:13px; line-height:1.4; white-space:pre-wrap;}
+  .oneonone-archive-btn{
+    margin-top:6px; display:block; margin-left:auto; font-size:11px; color:var(--text-muted);
+    background:none; border:none; cursor:pointer; padding:0; text-decoration:underline;
+  }
+  .oneonone-archive-btn:hover{color:var(--accent);}
+  .oneonone-empty{font-size:12.5px; color:var(--text-muted); margin:0 0 10px;}
+  .oneonone-input-row textarea{
+    width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:9px;
+    font-size:13.5px; font-family:inherit; resize:vertical; min-height:60px; margin-bottom:8px;
+  }
+  .oneonone-input-row button{
+    width:100%; padding:9px; border:none; border-radius:9px; background:var(--accent);
+    color:#fff; font-weight:600; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -319,20 +368,23 @@
 
   <div class="summary-bar" id="summary-bar"></div>
 
-  <main class="board" id="board">
-    <section class="column" data-status="todo">
-      <h2>Por hacer <span class="count" id="count-todo">0</span></h2>
-      <div class="card-list" id="list-todo"></div>
-    </section>
-    <section class="column" data-status="in_progress">
-      <h2>En progreso <span class="count" id="count-in_progress">0</span></h2>
-      <div class="card-list" id="list-in_progress"></div>
-    </section>
-    <section class="column" data-status="done">
-      <h2>Hecho <span class="count" id="count-done">0</span></h2>
-      <div class="card-list" id="list-done"></div>
-    </section>
-  </main>
+  <div class="board-area">
+    <main class="board" id="board">
+      <section class="column" data-status="todo">
+        <h2>Por hacer <span class="count" id="count-todo">0</span></h2>
+        <div class="card-list" id="list-todo"></div>
+      </section>
+      <section class="column" data-status="in_progress">
+        <h2>En progreso <span class="count" id="count-in_progress">0</span></h2>
+        <div class="card-list" id="list-in_progress"></div>
+      </section>
+      <section class="column" data-status="done">
+        <h2>Hecho <span class="count" id="count-done">0</span></h2>
+        <div class="card-list" id="list-done"></div>
+      </section>
+    </main>
+    <aside id="oneonone-panel" class="oneonone-panel hidden"></aside>
+  </div>
 </div>
 
 <!-- ============ 4. Modal de detalle / creación ============ -->
@@ -430,6 +482,12 @@ const CONFIG = {
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpaGtsd2xid3dweHhub3lyeWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMjA5ODEsImV4cCI6MjEwMjU5Njk4MX0._CTIchSkka5Z3_Eu-ysNm0kqTRW5QP1BaPax8ibiQk4',
   ACCESS_CODE: 'team2026',
 };
+
+// Panel privado de notas 1:1 — solo esta persona lo puede ver, y solo con
+// este código. IMPORTANTE: esto es una barrera dentro de la app, no
+// seguridad real (misma limitación que ACCESS_CODE, ver README).
+const ONE_ON_ONE_MANAGER = 'Luis Jose Alvarez';
+const ONE_ON_ONE_PIN = '1234';
 // =====================================================================
 
 const isConfigured = !CONFIG.SUPABASE_URL.includes('YOUR_') && !CONFIG.SUPABASE_ANON_KEY.includes('YOUR_');
@@ -471,8 +529,12 @@ const state = {
   currentUser: localStorage.getItem('pl_user') || null,
   filterAssignee: 'all',
   filterProject: 'all',
+  filterPriority: 'all',
   search: '',
   activeId: null, // pendiente being edited in modal, null = new
+  oneOnOneNotes: [],
+  oneOnOneUnlocked: sessionStorage.getItem('pl_1on1_unlocked') === '1',
+  oneOnOneShowArchived: false,
 };
 
 // ---------------------------------------------------------------------
@@ -545,6 +607,7 @@ async function startApp(){
   render();
   renderNotes();
   checkNewAssignments();
+  renderOneOnOnePanel();
   subscribeRealtime();
 }
 
@@ -553,7 +616,9 @@ function populateFilters(){
 
   document.getElementById('filter-assignee').addEventListener('change', (e) => {
     state.filterAssignee = e.target.value;
+    state.oneOnOneShowArchived = false;
     render();
+    renderOneOnOnePanel();
   });
   document.getElementById('search-input').addEventListener('input', (e) => {
     state.search = e.target.value.trim().toLowerCase();
@@ -675,6 +740,7 @@ async function refreshTeamEverywhere(){
   renderTeamList();
   refreshTeamSelects();
   render();
+  renderOneOnOnePanel();
 }
 
 function populateProjectFilter(){
@@ -763,13 +829,22 @@ function subscribeRealtime(){
 // ---------------------------------------------------------------------
 // Render: board
 // ---------------------------------------------------------------------
-function matchesFilters(p){
+// Filtros que NO incluyen prioridad — se usan para calcular los conteos de
+// Alta/Media/Baja en el resumen, para que no se pongan en 0 solas al hacer
+// click en una de ellas.
+function matchesBaseFilters(p){
   if (state.filterAssignee !== 'all' && p.assignee_id !== state.filterAssignee && p.support_id !== state.filterAssignee) return false;
   if (state.filterProject !== 'all' && p.project !== state.filterProject) return false;
   if (state.search) {
     const hay = `${p.title} ${p.description || ''} ${p.project || ''}`.toLowerCase();
     if (!hay.includes(state.search)) return false;
   }
+  return true;
+}
+
+function matchesFilters(p){
+  if (!matchesBaseFilters(p)) return false;
+  if (state.filterPriority !== 'all' && p.priority !== state.filterPriority) return false;
   return true;
 }
 
@@ -829,7 +904,7 @@ function render(){
       : `<div class="empty-col">Sin pendientes</div>`;
   }
 
-  renderSummary(filtered);
+  renderSummary(filtered, state.pendientes.filter(matchesBaseFilters));
   attachCardEvents();
 }
 
@@ -913,29 +988,167 @@ async function deleteNote(id){
   renderNotes();
 }
 
-function renderSummary(filtered){
+function renderSummary(filtered, baseFiltered){
   const today = todayStr();
   const overdue = filtered.filter(p => p.due_date && p.due_date < today && p.status !== 'done').length;
   const total = filtered.length;
   const done = filtered.filter(p => p.status === 'done').length;
 
   // Conteo por prioridad, solo de lo que sigue activo (no "Hecho"), para dar foco a lo que falta.
-  const active = filtered.filter(p => p.status !== 'done');
+  // Se calcula sobre baseFiltered (ignora el propio filtro de prioridad) para que las 3
+  // etiquetas sigan mostrando conteos reales aunque una de ellas esté seleccionada.
+  const active = (baseFiltered || filtered).filter(p => p.status !== 'done');
   const alta = active.filter(p => p.priority === 'alta').length;
   const media = active.filter(p => p.priority === 'media').length;
   const baja = active.filter(p => p.priority === 'baja').length;
+  const fp = state.filterPriority;
 
   document.getElementById('summary-bar').innerHTML = `
     <span><b>${total}</b> pendientes visibles</span>
     <span><b>${done}</b> completados</span>
     ${overdue ? `<span class="overdue">⚠ ${overdue} vencido${overdue === 1 ? '' : 's'}</span>` : ''}
-    <span style="display:flex; align-items:center; gap:6px;">
+    <span class="priority-summary">
       Prioridad activa:
-      <span class="pill pill-alta pill-lg">Alta ${alta}</span>
-      <span class="pill pill-media pill-lg">Media ${media}</span>
-      <span class="pill pill-baja pill-lg">Baja ${baja}</span>
+      <button class="pill pill-alta pill-lg pill-clickable${fp === 'alta' ? ' active' : ''}" data-priority="alta">Alta ${alta}</button>
+      <button class="pill pill-media pill-lg pill-clickable${fp === 'media' ? ' active' : ''}" data-priority="media">Media ${media}</button>
+      <button class="pill pill-baja pill-lg pill-clickable${fp === 'baja' ? ' active' : ''}" data-priority="baja">Baja ${baja}</button>
     </span>
   `;
+  document.querySelectorAll('.priority-summary [data-priority]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.priority;
+      state.filterPriority = state.filterPriority === p ? 'all' : p;
+      render();
+    });
+  });
+}
+
+// ---------------------------------------------------------------------
+// Panel privado de notas 1:1 (solo ONE_ON_ONE_MANAGER, protegido con PIN)
+// ---------------------------------------------------------------------
+function currentOneOnOneMember(){
+  if (state.currentUser !== ONE_ON_ONE_MANAGER) return null;
+  if (state.filterAssignee === 'all') return null;
+  return state.team.find(t => t.id === state.filterAssignee) || null;
+}
+
+async function renderOneOnOnePanel(){
+  const panel = document.getElementById('oneonone-panel');
+  const member = currentOneOnOneMember();
+
+  if (!member) {
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
+    state.oneOnOneShowArchived = false;
+    return;
+  }
+  panel.classList.remove('hidden');
+
+  if (!state.oneOnOneUnlocked) {
+    panel.innerHTML = `
+      <h3>🔒 Notas 1:1</h3>
+      <p class="oneonone-sub">Solo visible para ti.</p>
+      <div class="oneonone-lock">
+        <input id="oneonone-pin" type="password" inputmode="numeric" placeholder="Código" maxlength="8" autocomplete="off" />
+        <button id="oneonone-unlock-btn">Desbloquear</button>
+        <p id="oneonone-pin-error" class="error hidden">Código incorrecto.</p>
+      </div>
+    `;
+    document.getElementById('oneonone-unlock-btn').addEventListener('click', tryUnlockOneOnOne);
+    document.getElementById('oneonone-pin').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryUnlockOneOnOne();
+    });
+    return;
+  }
+
+  const archivedMode = state.oneOnOneShowArchived;
+  state.oneOnOneNotes = await loadOneOnOneNotes(member.id, archivedMode);
+  panel.innerHTML = `
+    <h3>🔒 1:1 — ${esc(member.name)}</h3>
+    <p class="oneonone-sub">
+      <span>Privado, solo tú lo ves.</span>
+      <button id="oneonone-lock-btn" class="link-btn" style="padding:0;">Bloquear</button>
+    </p>
+    <button id="oneonone-toggle-archived" class="oneonone-toggle">
+      ${archivedMode ? '‹ Ver notas activas' : '🗂 Ver notas archivadas'}
+    </button>
+    <div class="oneonone-notes-list">
+      ${state.oneOnOneNotes.length
+        ? state.oneOnOneNotes.map(n => `
+            <div class="oneonone-note">
+              <div class="date">${new Date(n.created_at).toLocaleString('es-MX')}</div>
+              <div class="body">${esc(n.content)}</div>
+              <button class="oneonone-archive-btn" data-id="${n.id}" data-archive="${archivedMode ? '0' : '1'}">
+                ${archivedMode ? 'Desarchivar' : 'Archivar'}
+              </button>
+            </div>`).join('')
+        : `<p class="oneonone-empty">${archivedMode ? `No hay notas archivadas de ${esc(member.name)}.` : `Sin notas todavía con ${esc(member.name)}.`}</p>`}
+    </div>
+    ${archivedMode ? '' : `
+    <div class="oneonone-input-row">
+      <textarea id="oneonone-input" placeholder="Nota o avance de tu 1:1 con ${esc(member.name)}..."></textarea>
+      <button id="oneonone-submit">Guardar nota</button>
+    </div>`}
+  `;
+  if (!archivedMode) {
+    document.getElementById('oneonone-submit').addEventListener('click', submitOneOnOneNote);
+  }
+  document.getElementById('oneonone-lock-btn').addEventListener('click', () => {
+    state.oneOnOneUnlocked = false;
+    sessionStorage.removeItem('pl_1on1_unlocked');
+    renderOneOnOnePanel();
+  });
+  document.getElementById('oneonone-toggle-archived').addEventListener('click', () => {
+    state.oneOnOneShowArchived = !state.oneOnOneShowArchived;
+    renderOneOnOnePanel();
+  });
+  panel.querySelectorAll('.oneonone-archive-btn').forEach(btn => {
+    btn.addEventListener('click', () => archiveOneOnOneNote(btn.dataset.id, btn.dataset.archive === '1'));
+  });
+}
+
+function tryUnlockOneOnOne(){
+  const input = document.getElementById('oneonone-pin');
+  const err = document.getElementById('oneonone-pin-error');
+  if (input.value === ONE_ON_ONE_PIN) {
+    state.oneOnOneUnlocked = true;
+    sessionStorage.setItem('pl_1on1_unlocked', '1');
+    renderOneOnOnePanel();
+  } else {
+    err.classList.remove('hidden');
+  }
+}
+
+async function loadOneOnOneNotes(memberId, archived = false){
+  const { data, error } = await supabase
+    .from('one_on_one_notes')
+    .select('*')
+    .eq('team_member_id', memberId)
+    .eq('archived', archived)
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+async function submitOneOnOneNote(){
+  const member = currentOneOnOneMember();
+  if (!member) return;
+  const input = document.getElementById('oneonone-input');
+  const content = input.value.trim();
+  if (!content) return;
+  await supabase.from('one_on_one_notes').insert({
+    team_member_id: member.id,
+    author: state.currentUser,
+    content,
+    archived: false,
+  });
+  input.value = '';
+  renderOneOnOnePanel();
+}
+
+async function archiveOneOnOneNote(noteId, archivedValue){
+  await supabase.from('one_on_one_notes').update({ archived: archivedValue }).eq('id', noteId);
+  renderOneOnOnePanel();
 }
 
 function attachCardEvents(){
