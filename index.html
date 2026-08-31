@@ -68,6 +68,84 @@
   header h1{margin:0; font-size:19px;}
   .subtitle{font-size:12.5px; color:var(--text-muted);}
   .header-right{display:flex; align-items:center; gap:10px; font-size:14px;}
+
+  /* ---------- Tabs: Pendientes / Reuniones semanales ---------- */
+  .view-tabs{
+    display:flex; gap:6px; padding:12px 28px 0; background:var(--surface);
+  }
+  .view-tab{
+    padding:9px 16px; border:none; border-radius:9px 9px 0 0; background:none;
+    color:var(--text-muted); font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .view-tab.active{background:var(--accent-soft); color:var(--accent-dark);}
+  .view-tab:hover:not(.active){background:#f4f5f9;}
+
+  /* ---------- Reuniones semanales ---------- */
+  .reunion-layout{
+    display:flex; gap:16px; align-items:flex-start; padding:20px 28px 40px;
+  }
+  .reunion-panel{
+    background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px;
+  }
+  .reunion-minutas-panel{flex:1.3; min-width:0;}
+  .reunion-quickadd-panel{flex:1; min-width:0; max-width:380px; position:sticky; top:16px;}
+  .reunion-panel h2{margin:0 0 4px; font-size:15px; display:flex; align-items:center; gap:6px;}
+  .reunion-panel .reunion-sub{font-size:12.5px; color:var(--text-muted); margin:0 0 14px;}
+  @media (max-width:900px){
+    .reunion-layout{flex-direction:column;}
+    .reunion-quickadd-panel{max-width:100%; position:static;}
+  }
+  .minuta-input-row textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:9px;
+    font-size:13.5px; font-family:inherit; resize:vertical; min-height:70px; margin-bottom:8px;
+  }
+  .minuta-input-row button{
+    padding:9px 16px; border:none; border-radius:9px; background:var(--accent);
+    color:#fff; font-weight:600; font-size:13px; cursor:pointer;
+  }
+  .minuta-toggle{
+    display:block; margin:14px 0 10px; background:none; border:none; padding:0;
+    cursor:pointer; color:var(--accent); font-size:12.5px; font-weight:600;
+  }
+  .minuta-toggle:hover{text-decoration:underline;}
+  .minutas-list{display:flex; flex-direction:column; gap:10px;}
+  .minuta{background:#f7f7fb; border-radius:9px; padding:10px 12px;}
+  .minuta-head{display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-muted); margin-bottom:4px; gap:8px;}
+  .minuta-head b{color:var(--text);}
+  .minuta-head .minuta-edited{font-style:italic;}
+  .minuta-body{font-size:13.5px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .minuta-actions{display:flex; gap:10px; margin-top:6px;}
+  .minuta-action-btn{
+    background:none; border:none; padding:0; cursor:pointer; font-size:11px;
+    color:var(--text-muted); text-decoration:underline;
+  }
+  .minuta-action-btn:hover{color:var(--accent);}
+  .minuta-edit-row{display:flex; flex-direction:column; gap:6px;}
+  .minuta-edit-row textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    font-size:13px; font-family:inherit; resize:vertical; min-height:60px;
+  }
+  .minuta-edit-actions{display:flex; gap:8px; justify-content:flex-end;}
+  .minuta-edit-actions button{padding:5px 10px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer;}
+  .minuta-edit-save{border:none; background:var(--accent); color:#fff;}
+  .minuta-edit-cancel{border:1px solid var(--border); background:#fff; color:var(--text-muted);}
+  .minutas-empty{font-size:12.5px; color:var(--text-muted); padding:4px 0;}
+  .quickadd-field{margin-bottom:12px;}
+  .quickadd-field label{display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px;}
+  .quickadd-field input, .quickadd-field select, .quickadd-field textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    font-size:13.5px; font-family:inherit; background:#fff; color:var(--text);
+  }
+  .quickadd-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .quickadd-submit{
+    width:100%; padding:10px; border:none; border-radius:9px; background:var(--accent);
+    color:#fff; font-weight:600; font-size:13.5px; cursor:pointer; margin-top:4px;
+  }
+  .quickadd-submit:hover{background:var(--accent-dark);}
+  .quickadd-confirm{
+    font-size:12.5px; color:#166534; background:#dcfce7; border-radius:8px;
+    padding:7px 10px; margin-top:10px; text-align:center;
+  }
   .link-btn{
     background:none; border:none; color:var(--accent); cursor:pointer;
     font-size:13.5px; padding:4px 6px;
@@ -108,7 +186,7 @@
     font-size:11px; padding:0; line-height:1;
   }
   .note-delete:hover{color:var(--danger);}
-  .note-body{font-size:13px; line-height:1.4; white-space:pre-wrap;}
+  .note-body{font-size:13px; line-height:1.4; white-space:pre-wrap; overflow-wrap:anywhere;}
   .notes-empty{font-size:12.5px; color:var(--text-muted); padding:4px 0;}
   .note-input-row{display:flex; gap:8px; align-items:flex-start;}
   .note-input-row textarea{
@@ -154,16 +232,17 @@
     padding:8px 28px 40px;
   }
   .board{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px;
     flex:1; min-width:0;
   }
   @media (max-width:900px){
     .board-area{flex-direction:column;}
-    .board{grid-template-columns:1fr; }
+    .board{grid-template-columns:minmax(0,1fr); }
     .oneonone-panel{width:100%;}
   }
   .column{
     background:#eceefa; border-radius:var(--radius); padding:12px; min-height:120px;
+    min-width:0;
   }
   .column h2{
     font-size:13.5px; text-transform:uppercase; letter-spacing:.04em;
@@ -182,18 +261,19 @@
   }
   .card:hover{border-color:var(--border);}
   .card.dragging{opacity:.4;}
-  .card-top{display:flex; align-items:center; gap:6px;}
+  .card-top{display:flex; align-items:center; gap:6px; min-width:0;}
   .card-title{
-    font-size:12.5px; font-weight:600; margin:0; line-height:1.3; flex:1;
+    font-size:12.5px; font-weight:600; margin:0; line-height:1.3; flex:1; min-width:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .card-meta{display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:4px;}
   .card-last-comment{
     font-size:10.5px; color:var(--text-muted); margin:4px 0 0; line-height:1.3;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
   }
   .pill{
     font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:20px; white-space:nowrap;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis;
   }
   .pill-lg{font-size:11px; padding:2px 9px;}
   .pill-alta{background:#fde2e2; color:#b91c1c;}
@@ -234,12 +314,32 @@
   .field textarea{resize:vertical; min-height:60px;}
   .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   #comments-section{margin-top:18px; border-top:1px solid var(--border); padding-top:14px;}
-  #comments-section h3{margin:0 0 10px; font-size:13.5px;}
-  #comments-list{display:flex; flex-direction:column; gap:10px; max-height:180px; overflow-y:auto; margin-bottom:10px;}
+  #comments-section h3{margin:0 0 10px; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .comments-toggle{background:none; border:none; padding:0; cursor:pointer; color:var(--accent); font-size:11.5px; font-weight:600;}
+  .comments-toggle:hover{text-decoration:underline;}
+  #comments-list{display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; margin-bottom:10px;}
   .comment{background:#f7f7fb; border-radius:9px; padding:8px 10px;}
-  .comment-head{display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-muted); margin-bottom:3px;}
+  .comment-head{display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-muted); margin-bottom:3px; gap:8px;}
   .comment-head b{color:var(--text);}
-  .comment-body{font-size:13.5px; line-height:1.4;}
+  .comment-head .comment-edited{font-style:italic;}
+  .comment-body{font-size:13.5px; line-height:1.4; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .comment-actions{display:flex; gap:10px; margin-top:5px;}
+  .comment-action-btn{
+    background:none; border:none; padding:0; cursor:pointer; font-size:11px;
+    color:var(--text-muted); text-decoration:underline;
+  }
+  .comment-action-btn:hover{color:var(--accent);}
+  .comment-edit-row{display:flex; flex-direction:column; gap:6px;}
+  .comment-edit-row textarea{
+    width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:8px;
+    font-size:13px; font-family:inherit; resize:vertical; min-height:50px;
+  }
+  .comment-edit-actions{display:flex; gap:8px; justify-content:flex-end;}
+  .comment-edit-actions button{
+    padding:5px 10px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .comment-edit-save{border:none; background:var(--accent); color:#fff;}
+  .comment-edit-cancel{border:1px solid var(--border); background:#fff; color:var(--text-muted);}
   .comment-input-row{display:flex; gap:8px;}
   .comment-input-row input{flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:9px; font-size:13.5px;}
   .comment-input-row button{
@@ -289,7 +389,7 @@
   }
   .oneonone-note{background:#f7f7fb; border-radius:9px; padding:8px 10px;}
   .oneonone-note .date{font-size:11px; color:var(--text-muted); margin-bottom:3px;}
-  .oneonone-note .body{font-size:13px; line-height:1.4; white-space:pre-wrap;}
+  .oneonone-note .body{font-size:13px; line-height:1.4; white-space:pre-wrap; overflow-wrap:anywhere;}
   .oneonone-archive-btn{
     margin-top:6px; display:block; margin-left:auto; font-size:11px; color:var(--text-muted);
     background:none; border:none; cursor:pointer; padding:0; text-decoration:underline;
@@ -350,40 +450,101 @@
 
   <div id="notify-banner" class="notify-banner hidden"></div>
 
-  <div class="notes-section">
-    <h2>📌 Notas del equipo</h2>
-    <div class="notes-list" id="notes-list"></div>
-    <div class="note-input-row">
-      <textarea id="note-input" placeholder="Escribe una nota importante para todo el equipo..."></textarea>
-      <button id="note-submit">Publicar</button>
+  <nav class="view-tabs">
+    <button id="tab-pendientes" class="view-tab active">📋 Pendientes</button>
+    <button id="tab-reuniones" class="view-tab">🗓 Reuniones semanales</button>
+  </nav>
+
+  <div id="view-pendientes">
+    <div class="notes-section">
+      <h2>📌 Notas del equipo</h2>
+      <div class="notes-list" id="notes-list"></div>
+      <div class="note-input-row">
+        <textarea id="note-input" placeholder="Escribe una nota importante para todo el equipo..."></textarea>
+        <button id="note-submit">Publicar</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search-input" type="text" placeholder="Buscar pendiente..." />
+      <select id="filter-assignee"><option value="all">Todo el equipo</option></select>
+      <select id="filter-project"><option value="all">Todos los proyectos</option></select>
+      <button id="new-pendiente-btn" class="primary-btn">+ Nuevo pendiente</button>
+    </div>
+
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <div class="board-area">
+      <main class="board" id="board">
+        <section class="column" data-status="todo">
+          <h2>Por hacer <span class="count" id="count-todo">0</span></h2>
+          <div class="card-list" id="list-todo"></div>
+        </section>
+        <section class="column" data-status="in_progress">
+          <h2>En progreso <span class="count" id="count-in_progress">0</span></h2>
+          <div class="card-list" id="list-in_progress"></div>
+        </section>
+        <section class="column" data-status="done">
+          <h2>Hecho <span class="count" id="count-done">0</span></h2>
+          <div class="card-list" id="list-done"></div>
+        </section>
+      </main>
+      <aside id="oneonone-panel" class="oneonone-panel hidden"></aside>
     </div>
   </div>
 
-  <div class="toolbar">
-    <input id="search-input" type="text" placeholder="Buscar pendiente..." />
-    <select id="filter-assignee"><option value="all">Todo el equipo</option></select>
-    <select id="filter-project"><option value="all">Todos los proyectos</option></select>
-    <button id="new-pendiente-btn" class="primary-btn">+ Nuevo pendiente</button>
-  </div>
+  <div id="view-reuniones" class="hidden">
+    <div class="reunion-layout">
+      <section class="reunion-panel reunion-minutas-panel">
+        <h2>🗓 Minuta de la reunión</h2>
+        <p class="reunion-sub">Cada nota que guardes queda con fecha y hora, como historial de tus reuniones semanales.</p>
+        <div class="minuta-input-row">
+          <textarea id="minuta-input" placeholder="Escribe lo que se habló, acuerdos, seguimiento..."></textarea>
+          <button id="minuta-submit">Guardar minuta</button>
+        </div>
+        <button id="minuta-toggle-archived" class="minuta-toggle">🗂 Ver minutas archivadas</button>
+        <div class="minutas-list" id="minutas-list"></div>
+      </section>
 
-  <div class="summary-bar" id="summary-bar"></div>
-
-  <div class="board-area">
-    <main class="board" id="board">
-      <section class="column" data-status="todo">
-        <h2>Por hacer <span class="count" id="count-todo">0</span></h2>
-        <div class="card-list" id="list-todo"></div>
-      </section>
-      <section class="column" data-status="in_progress">
-        <h2>En progreso <span class="count" id="count-in_progress">0</span></h2>
-        <div class="card-list" id="list-in_progress"></div>
-      </section>
-      <section class="column" data-status="done">
-        <h2>Hecho <span class="count" id="count-done">0</span></h2>
-        <div class="card-list" id="list-done"></div>
-      </section>
-    </main>
-    <aside id="oneonone-panel" class="oneonone-panel hidden"></aside>
+      <aside class="reunion-panel reunion-quickadd-panel">
+        <h2>➕ Agregar pendiente rápido</h2>
+        <p class="reunion-sub">Para sumarlo al vuelo mientras hablan, sin salir de la reunión.</p>
+        <div class="quickadd-field">
+          <label>Título</label>
+          <input id="rm-title" type="text" placeholder="¿Qué hay que hacer?" />
+        </div>
+        <div class="quickadd-row">
+          <div class="quickadd-field">
+            <label>Responsable</label>
+            <select id="rm-assignee"></select>
+          </div>
+          <div class="quickadd-field">
+            <label>Apoyo (opcional)</label>
+            <select id="rm-support"></select>
+          </div>
+        </div>
+        <div class="quickadd-row">
+          <div class="quickadd-field">
+            <label>Prioridad</label>
+            <select id="rm-priority">
+              <option value="alta">Alta</option>
+              <option value="media" selected>Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+          <div class="quickadd-field">
+            <label>Fecha límite</label>
+            <input id="rm-due" type="date" />
+          </div>
+        </div>
+        <div class="quickadd-field">
+          <label>Proyecto / etiqueta</label>
+          <input id="rm-project" type="text" placeholder="Ej. Reporte mensual, Cliente X..." />
+        </div>
+        <button id="rm-submit" class="quickadd-submit">+ Agregar pendiente</button>
+        <div id="rm-confirm" class="quickadd-confirm hidden">Pendiente agregado ✓</div>
+      </aside>
+    </div>
   </div>
 </div>
 
@@ -437,9 +598,12 @@
     </div>
 
     <div id="comments-section" class="hidden">
-      <h3>Comentarios / historial</h3>
+      <h3>
+        <span>Comentarios / historial</span>
+        <button id="comments-toggle-archived" class="comments-toggle">🗂 Ver archivados</button>
+      </h3>
       <div id="comments-list"></div>
-      <div class="comment-input-row">
+      <div id="comment-input-row" class="comment-input-row">
         <input id="comment-input" type="text" placeholder="Escribe un comentario..." />
         <button id="comment-submit">Enviar</button>
       </div>
@@ -535,6 +699,12 @@ const state = {
   oneOnOneNotes: [],
   oneOnOneUnlocked: sessionStorage.getItem('pl_1on1_unlocked') === '1',
   oneOnOneShowArchived: false,
+  showArchivedComments: false,
+  editingCommentId: null,
+  currentView: 'pendientes', // 'pendientes' | 'reuniones'
+  meetingNotes: [],
+  meetingShowArchived: false,
+  editingMeetingNoteId: null,
 };
 
 // ---------------------------------------------------------------------
@@ -603,12 +773,31 @@ async function startApp(){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('current-user-label').textContent = state.currentUser;
   populateFilters();
+  setupViewTabs();
   await Promise.all([loadPendientes(), loadNotes(), loadLatestComments()]);
   render();
   renderNotes();
   checkNewAssignments();
   renderOneOnOnePanel();
   subscribeRealtime();
+}
+
+function setupViewTabs(){
+  document.getElementById('tab-pendientes').addEventListener('click', () => switchView('pendientes'));
+  document.getElementById('tab-reuniones').addEventListener('click', () => switchView('reuniones'));
+}
+
+async function switchView(view){
+  state.currentView = view;
+  document.getElementById('tab-pendientes').classList.toggle('active', view === 'pendientes');
+  document.getElementById('tab-reuniones').classList.toggle('active', view === 'reuniones');
+  document.getElementById('view-pendientes').classList.toggle('hidden', view !== 'pendientes');
+  document.getElementById('view-reuniones').classList.toggle('hidden', view !== 'reuniones');
+  if (view === 'reuniones') {
+    state.meetingShowArchived = false;
+    state.editingMeetingNoteId = null;
+    await renderMeetingNotes();
+  }
 }
 
 function populateFilters(){
@@ -651,6 +840,19 @@ function refreshTeamSelects(){
   supportFormSelect.innerHTML = '<option value="">Nadie apoyando</option>' +
     state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
   if (state.team.some(t => t.id === prevSupport)) supportFormSelect.value = prevSupport;
+
+  const rmAssignee = document.getElementById('rm-assignee');
+  const prevRmAssignee = rmAssignee.value;
+  rmAssignee.innerHTML = '<option value="">Sin asignar</option>' +
+    state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  rmAssignee.value = state.team.some(t => t.id === prevRmAssignee) ? prevRmAssignee
+    : (state.team.find(t => t.name === state.currentUser)?.id || '');
+
+  const rmSupport = document.getElementById('rm-support');
+  const prevRmSupport = rmSupport.value;
+  rmSupport.innerHTML = '<option value="">Nadie apoyando</option>' +
+    state.team.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  if (state.team.some(t => t.id === prevRmSupport)) rmSupport.value = prevRmSupport;
 }
 
 // ---------------------------------------------------------------------
@@ -780,21 +982,24 @@ async function loadNotes(){
   state.notes = data || [];
 }
 
-async function loadComments(pendienteId){
+async function loadComments(pendienteId, archived = false){
   const { data, error } = await supabase
     .from('comentarios')
     .select('*')
     .eq('pendiente_id', pendienteId)
+    .eq('archived', archived)
     .order('created_at', { ascending: true });
   if (error) { console.error(error); return []; }
   return data || [];
 }
 
 // Para mostrar en cada tarjeta el último comentario, sin tener que abrir cada tarea.
+// Solo considera comentarios activos (no archivados).
 async function loadLatestComments(){
   const { data, error } = await supabase
     .from('comentarios')
     .select('pendiente_id, content, created_at')
+    .eq('archived', false)
     .order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
   const map = {};
@@ -815,13 +1020,16 @@ function subscribeRealtime(){
       await loadLatestComments();
       render();
       if (state.activeId) {
-        state.comments = await loadComments(state.activeId);
+        state.comments = await loadComments(state.activeId, state.showArchivedComments);
         renderComments();
       }
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'notas' }, async () => {
       await loadNotes();
       renderNotes();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reunion_notas' }, async () => {
+      if (state.currentView === 'reuniones') await renderMeetingNotes();
     })
     .subscribe();
 }
@@ -1189,6 +1397,8 @@ backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(
 async function openModal(id){
   state.activeId = id;
   const isNew = !id;
+  state.showArchivedComments = false;
+  state.editingCommentId = null;
   document.getElementById('modal-title').textContent = isNew ? 'Nuevo pendiente' : 'Editar pendiente';
   document.getElementById('delete-btn').classList.toggle('hidden', isNew);
   document.getElementById('comments-section').classList.toggle('hidden', isNew);
@@ -1226,6 +1436,8 @@ function closeModal(){
   document.body.classList.remove('no-scroll');
   state.activeId = null;
   state.comments = [];
+  state.showArchivedComments = false;
+  state.editingCommentId = null;
 }
 
 document.getElementById('save-btn').addEventListener('click', async () => {
@@ -1266,18 +1478,66 @@ document.getElementById('delete-btn').addEventListener('click', async () => {
 // ---------------------------------------------------------------------
 function renderComments(){
   const list = document.getElementById('comments-list');
+  const archivedMode = state.showArchivedComments;
+  const toggleBtn = document.getElementById('comments-toggle-archived');
+  toggleBtn.textContent = archivedMode ? '‹ Ver comentarios activos' : '🗂 Ver archivados';
+  document.getElementById('comment-input-row').classList.toggle('hidden', archivedMode);
+
   list.innerHTML = state.comments.length
-    ? state.comments.map(c => `
+    ? state.comments.map(c => {
+        if (state.editingCommentId === c.id) {
+          return `
+            <div class="comment">
+              <div class="comment-head"><b>${esc(c.author)}</b><span>${new Date(c.created_at).toLocaleString('es-MX')}</span></div>
+              <div class="comment-edit-row">
+                <textarea id="comment-edit-input-${c.id}">${esc(c.content)}</textarea>
+                <div class="comment-edit-actions">
+                  <button class="comment-edit-cancel" data-cancel-id="${c.id}">Cancelar</button>
+                  <button class="comment-edit-save" data-save-id="${c.id}">Guardar</button>
+                </div>
+              </div>
+            </div>`;
+        }
+        return `
         <div class="comment">
-          <div class="comment-head"><b>${esc(c.author)}</b><span>${new Date(c.created_at).toLocaleString('es-MX')}</span></div>
+          <div class="comment-head">
+            <b>${esc(c.author)}</b>
+            <span>${new Date(c.created_at).toLocaleString('es-MX')}${c.edited_at ? ' <span class="comment-edited">(editado)</span>' : ''}</span>
+          </div>
           <div class="comment-body">${esc(c.content)}</div>
-        </div>`).join('')
-    : `<p style="font-size:12.5px;color:var(--text-muted)">Sin comentarios todavía.</p>`;
-  list.scrollTop = list.scrollHeight;
+          <div class="comment-actions">
+            ${archivedMode ? '' : `<button class="comment-action-btn" data-edit-id="${c.id}">Editar</button>`}
+            <button class="comment-action-btn" data-archive-id="${c.id}" data-archive-to="${archivedMode ? '0' : '1'}">
+              ${archivedMode ? 'Desarchivar' : 'Archivar'}
+            </button>
+          </div>
+        </div>`;
+      }).join('')
+    : `<p style="font-size:12.5px;color:var(--text-muted)">${archivedMode ? 'Sin comentarios archivados.' : 'Sin comentarios todavía.'}</p>`;
+  if (!archivedMode) list.scrollTop = list.scrollHeight;
+
+  list.querySelectorAll('[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', () => { state.editingCommentId = btn.dataset.editId; renderComments(); });
+  });
+  list.querySelectorAll('[data-cancel-id]').forEach(btn => {
+    btn.addEventListener('click', () => { state.editingCommentId = null; renderComments(); });
+  });
+  list.querySelectorAll('[data-save-id]').forEach(btn => {
+    btn.addEventListener('click', () => saveEditComment(btn.dataset.saveId));
+  });
+  list.querySelectorAll('[data-archive-id]').forEach(btn => {
+    btn.addEventListener('click', () => archiveComment(btn.dataset.archiveId, btn.dataset.archiveTo === '1'));
+  });
 }
 
 document.getElementById('comment-submit').addEventListener('click', submitComment);
 document.getElementById('comment-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitComment(); });
+document.getElementById('comments-toggle-archived').addEventListener('click', async () => {
+  state.showArchivedComments = !state.showArchivedComments;
+  state.editingCommentId = null;
+  state.comments = await loadComments(state.activeId, state.showArchivedComments);
+  renderComments();
+});
 
 async function submitComment(){
   const input = document.getElementById('comment-input');
@@ -1287,10 +1547,165 @@ async function submitComment(){
     pendiente_id: state.activeId,
     author: state.currentUser,
     content,
+    archived: false,
   });
   input.value = '';
-  state.comments = await loadComments(state.activeId);
+  state.comments = await loadComments(state.activeId, state.showArchivedComments);
   renderComments();
+}
+
+async function archiveComment(commentId, archivedValue){
+  await supabase.from('comentarios').update({ archived: archivedValue }).eq('id', commentId);
+  state.editingCommentId = null;
+  state.comments = await loadComments(state.activeId, state.showArchivedComments);
+  renderComments();
+}
+
+async function saveEditComment(commentId){
+  const textarea = document.getElementById(`comment-edit-input-${commentId}`);
+  const content = textarea.value.trim();
+  if (!content) return;
+  await supabase.from('comentarios').update({ content, edited_at: new Date().toISOString() }).eq('id', commentId);
+  state.editingCommentId = null;
+  state.comments = await loadComments(state.activeId, state.showArchivedComments);
+  renderComments();
+}
+
+// ---------------------------------------------------------------------
+// Reuniones semanales: minutas
+// ---------------------------------------------------------------------
+async function loadMeetingNotes(archived = false){
+  const { data, error } = await supabase
+    .from('reunion_notas')
+    .select('*')
+    .eq('archived', archived)
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+async function renderMeetingNotes(){
+  const archivedMode = state.meetingShowArchived;
+  state.meetingNotes = await loadMeetingNotes(archivedMode);
+  const toggleBtn = document.getElementById('minuta-toggle-archived');
+  toggleBtn.textContent = archivedMode ? '‹ Ver minutas activas' : '🗂 Ver minutas archivadas';
+  document.querySelector('.minuta-input-row').classList.toggle('hidden', archivedMode);
+
+  const list = document.getElementById('minutas-list');
+  list.innerHTML = state.meetingNotes.length
+    ? state.meetingNotes.map(n => {
+        if (state.editingMeetingNoteId === n.id) {
+          return `
+            <div class="minuta">
+              <div class="minuta-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString('es-MX')}</span></div>
+              <div class="minuta-edit-row">
+                <textarea id="minuta-edit-input-${n.id}">${esc(n.content)}</textarea>
+                <div class="minuta-edit-actions">
+                  <button class="minuta-edit-cancel" data-cancel-id="${n.id}">Cancelar</button>
+                  <button class="minuta-edit-save" data-save-id="${n.id}">Guardar</button>
+                </div>
+              </div>
+            </div>`;
+        }
+        return `
+        <div class="minuta">
+          <div class="minuta-head">
+            <b>${esc(n.author)}</b>
+            <span>${new Date(n.created_at).toLocaleString('es-MX')}${n.edited_at ? ' <span class="minuta-edited">(editado)</span>' : ''}</span>
+          </div>
+          <div class="minuta-body">${esc(n.content)}</div>
+          <div class="minuta-actions">
+            ${archivedMode ? '' : `<button class="minuta-action-btn" data-edit-id="${n.id}">Editar</button>`}
+            <button class="minuta-action-btn" data-archive-id="${n.id}" data-archive-to="${archivedMode ? '0' : '1'}">
+              ${archivedMode ? 'Desarchivar' : 'Archivar'}
+            </button>
+          </div>
+        </div>`;
+      }).join('')
+    : `<p class="minutas-empty">${archivedMode ? 'Sin minutas archivadas.' : 'Sin minutas todavía. Escribe la primera arriba.'}</p>`;
+
+  list.querySelectorAll('[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', () => { state.editingMeetingNoteId = btn.dataset.editId; renderMeetingNotes(); });
+  });
+  list.querySelectorAll('[data-cancel-id]').forEach(btn => {
+    btn.addEventListener('click', () => { state.editingMeetingNoteId = null; renderMeetingNotes(); });
+  });
+  list.querySelectorAll('[data-save-id]').forEach(btn => {
+    btn.addEventListener('click', () => saveEditMeetingNote(btn.dataset.saveId));
+  });
+  list.querySelectorAll('[data-archive-id]').forEach(btn => {
+    btn.addEventListener('click', () => archiveMeetingNote(btn.dataset.archiveId, btn.dataset.archiveTo === '1'));
+  });
+}
+
+document.getElementById('minuta-submit').addEventListener('click', submitMeetingNote);
+document.getElementById('minuta-toggle-archived').addEventListener('click', () => {
+  state.meetingShowArchived = !state.meetingShowArchived;
+  state.editingMeetingNoteId = null;
+  renderMeetingNotes();
+});
+
+async function submitMeetingNote(){
+  const input = document.getElementById('minuta-input');
+  const content = input.value.trim();
+  if (!content) return;
+  await supabase.from('reunion_notas').insert({
+    author: state.currentUser,
+    content,
+    archived: false,
+  });
+  input.value = '';
+  await renderMeetingNotes();
+}
+
+async function archiveMeetingNote(noteId, archivedValue){
+  await supabase.from('reunion_notas').update({ archived: archivedValue }).eq('id', noteId);
+  state.editingMeetingNoteId = null;
+  await renderMeetingNotes();
+}
+
+async function saveEditMeetingNote(noteId){
+  const textarea = document.getElementById(`minuta-edit-input-${noteId}`);
+  const content = textarea.value.trim();
+  if (!content) return;
+  await supabase.from('reunion_notas').update({ content, edited_at: new Date().toISOString() }).eq('id', noteId);
+  state.editingMeetingNoteId = null;
+  await renderMeetingNotes();
+}
+
+// ---------------------------------------------------------------------
+// Reuniones semanales: agregar pendiente rápido
+// ---------------------------------------------------------------------
+document.getElementById('rm-submit').addEventListener('click', submitQuickPendiente);
+
+async function submitQuickPendiente(){
+  const titleInput = document.getElementById('rm-title');
+  const title = titleInput.value.trim();
+  if (!title) { titleInput.focus(); return; }
+  const payload = {
+    title,
+    description: '',
+    assignee_id: document.getElementById('rm-assignee').value || null,
+    support_id: document.getElementById('rm-support').value || null,
+    status: 'todo',
+    priority: document.getElementById('rm-priority').value,
+    due_date: document.getElementById('rm-due').value || null,
+    project: document.getElementById('rm-project').value.trim(),
+  };
+  await supabase.from('pendientes').insert(payload);
+  await loadPendientes();
+  render();
+
+  // Limpia el formulario para seguir agregando pendientes rápido, y confirma.
+  titleInput.value = '';
+  document.getElementById('rm-support').value = '';
+  document.getElementById('rm-priority').value = 'media';
+  document.getElementById('rm-due').value = '';
+  document.getElementById('rm-project').value = '';
+  const confirmEl = document.getElementById('rm-confirm');
+  confirmEl.classList.remove('hidden');
+  setTimeout(() => confirmEl.classList.add('hidden'), 2500);
+  titleInput.focus();
 }
 
 // ---------------------------------------------------------------------
